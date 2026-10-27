@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doppler Effect Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--card:#141f32;--line:#293952;--text:#edf4ff;--muted:#aabbd2;--cyan:#65d8ff;--red:#ff6969;--blue:#68aaff;--green:#7ee0b1}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#172944 0,#0b1220 58%);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);padding:16px}
+main{max-width:1000px;margin:auto}
+header{padding:10px 2px 18px}
+.eyebrow{color:var(--cyan);font-size:.76rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+h1{font-size:clamp(1.7rem,5vw,2.6rem);margin:.35rem 0}
+p{line-height:1.5}.muted,.hint{color:var(--muted)}.hint{font-size:.85rem}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:14px}
+.card{background:linear-gradient(145deg,rgba(23,36,57,.98),rgba(17,27,44,.98));border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 12px 28px #0002}
+h2{font-size:1.05rem;margin:0 0 12px}
+label{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin:15px 0 7px;font-size:.92rem}
+output{font-weight:800;color:var(--cyan);white-space:nowrap}
+select,input[type=range]{width:100%;accent-color:var(--cyan)}
+select{padding:11px;border-radius:10px;background:#0c1728;color:var(--text);border:1px solid #3b4e69;font-size:1rem}
+input[type=range]{cursor:pointer}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.metric{background:#0c1728;border:1px solid var(--line);border-radius:12px;padding:12px}
+.metric span{display:block;color:var(--muted);font-size:.78rem}.metric strong{display:block;font-size:1.35rem;margin-top:4px}
+.result strong{color:var(--green)}
+.formula{font-size:1.12rem;font-weight:750;line-height:1.7;overflow-wrap:anywhere}
+.mathline{background:#0c1728;padding:10px 12px;border-radius:10px;line-height:1.7;overflow-wrap:anywhere}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{border:1px solid #405574;background:#22344d;color:var(--text);padding:10px 13px;border-radius:10px;font-weight:700;cursor:pointer}
+button.primary{background:var(--cyan);color:#071320;border-color:var(--cyan)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid white;outline-offset:3px}
+canvas{display:block;width:100%;height:auto;border-radius:13px;background:#091525;border:1px solid #2c405b}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:var(--muted);margin:10px 0}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.pitchbar{height:9px;background:#253750;border-radius:20px;overflow:hidden;margin-top:10px}
+.pitchbar div{height:100%;width:50%;background:linear-gradient(90deg,#68aaff,#65d8ff,#7ee0b1);border-radius:20px;transition:width .2s}
+.case-note{padding:10px 12px;border-left:3px solid var(--cyan);background:#0c1728;border-radius:0 10px 10px 0}
+footer{font-size:.8rem;color:var(--muted);padding:4px 2px 20px}
+@media(max-width:760px){body{padding:11px}.layout{grid-template-columns:1fr}.card{padding:14px}.metrics strong{font-size:1.18rem}header{padding-bottom:10px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="eyebrow">Physics • Interactive Lab</div>
+<h1>Doppler Effect Simulator</h1>
+<p class="muted">Change the motion of the sound source and listener. Watch the wavefronts, then see how the observed frequency is calculated.</p>
+</header>
+<div class="layout">
+<section>
+<div class="card">
+<h2>1. Set up the situation</h2>
+<label for="case">Motion scenario</label>
+<select id="case">
+<option value="1">1 — Listener moves toward source</option>
+<option value="2">2 — Listener moves away from source</option>
+<option value="3">3 — Source moves toward listener</option>
+<option value="4">4 — Source moves away from listener</option>
+<option value="5">5 — Both move toward each other</option>
+<option value="6">6 — Both move away from each other</option>
+<option value="7">7 — Listener approaches; source moves away</option>
+<option value="8">8 — Listener moves away; source approaches</option>
+</select>
+<label for="fs">Source frequency, fS <output id="fsVal">500 Hz</output></label>
+<input id="fs" type="range" min="100" max="1000" step="10" value="500">
+<label for="v">Speed of sound, V <output id="vVal">343 m/s</output></label>
+<input id="v" type="range" min="300" max="360" step="1" value="343">
+<label for="vl">Listener speed, VL <output id="vlVal">20 m/s</output></label>
+<input id="vl" type="range" min="0" max="80" step="1" value="20">
+<label for="vs">Source speed, VS <output id="vsVal">30 m/s</output></label>
+<input id="vs" type="range" min="0" max="80" step="1" value="30">
+<div class="actions">
+<button class="primary" id="toggle">Pause animation</button>
+<button id="reset">Reset scene</button>
+</div>
+<p class="hint">The source and listener speeds are limited to below the speed of sound.</p>
+</div>
+<div class="card result">
+<h2>2. Calculated result</h2>
+<div class="metrics">
+<div class="metric"><span>Observed frequency (fL)</span><strong id="answer">579.87 Hz</strong></div>
+<div class="metric"><span>Frequency change</span><strong id="change">+79.87 Hz</strong></div>
+</div>
+<div class="pitchbar"><div id="pitchFill"></div></div>
+<p id="effect" class="case-note">The observed frequency is higher.</p>
+</div>
+</section>
+<section>
+<div class="card">
+<h2>3. Watch the sound waves</h2>
+<canvas id="scene" width="800" height="370" aria-label="Animated sound wavefronts from a moving source toward a listener"></canvas>
+<div class="legend">
+<span><i class="dot" style="background:var(--red)"></i>Sound source</span>
+<span><i class="dot" style="background:var(--blue)"></i>Listener</span>
+<span><i class="dot" style="background:#65d8ff"></i>Wavefronts</span>
+</div>
+<p class="hint">Each circle starts where the source emitted a sound pulse and expands outward. Crowded wavefronts mean shorter wavelength; spread-out wavefronts mean longer wavelength.</p>
+</div>
+<div class="card">
+<h2>4. Formula and substitution</h2>
+<div id="formula" class="formula">fL = fS × ((V + VL) / (V − VS))</div>
+<div id="substitution" class="mathline">fL = 500 × ((343 + 20) / (343 − 30))</div>
+<div id="calculation" class="mathline" style="margin-top:8px">fL = 579.87 Hz</div>
+<p id="formulaNote" class="hint">Use the signs that match the direction of motion.</p>
+</div>
+</section>
+</div>
+<footer><strong>Symbols:</strong> fL = observed/listener frequency (Hz), fS = source frequency (Hz), V = speed of sound (m/s), VL = listener speed (m/s), VS = source speed (m/s). This model assumes straight-line motion and a still air medium.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const canvas=$('scene'),ctx=canvas.getContext('2d');
+const caseData={
+1:{num:'V + VL',den:'V',desc:'The listener moves toward the source. The observed frequency increases.',sm:0,lm:-1},
+2:{num:'V − VL',den:'V',desc:'The listener moves away from the source. The observed frequency decreases.',sm:0,lm:1},
+3:{num:'V',den:'V − VS',desc:'The source approaches a stationary listener. The observed frequency increases.',sm:1,lm:0},
+4:{num:'V',den:'V + VS',desc:'The source moves away from a stationary listener. The observed frequency decreases.',sm:-1,lm:0},
+5:{num:'V + VL',den:'V − VS',desc:'Both move toward each other. The observed frequency increases the most in this set of cases.',sm:1,lm:-1},
+6:{num:'V − VL',den:'V + VS',desc:'Both move away from each other. The observed frequency decreases.',sm:-1,lm:1},
+7:{num:'V + VL',den:'V + VS',desc:'The listener approaches while the source moves away. Their effects oppose each other.',sm:-1,lm:-1},
+8:{num:'V − VL',den:'V − VS',desc:'The listener moves away while the source approaches. Their effects oppose each other.',sm:1,lm:1}
+};
+let running=true,lastTime=0,elapsed=0,sourceX=190,listenerX=610,waves=[],emitTime=0,prevCase=1;
+function resetScene(){elapsed=0;sourceX=190;listenerX=610;waves=[];emitTime=0;lastTime=0;}
+function update(){
+ const n=+$('case').value,fs=+$('fs').value,V=+$('v').value,vl=+$('vl').value,vs=+$('vs').value;
+ $('fsVal').textContent=fs+' Hz';$('vVal').textContent=V+' m/s';$('vlVal').textContent=vl+' m/s';$('vsVal').textContent=vs+' m/s';
+ const d=caseData[n];let numerator,denominator;
+ switch(n){
+ case 1:numerator=V+vl;denominator=V;break;
+ case 2:numerator=V-vl;denominator=V;break;
+ case 3:numerator=V;denominator=V-vs;break;
+ case 4:numerator=V;denominator=V+vs;break;
+ case 5:numerator=V+vl;denominator=V-vs;break;
+ case 6:numerator=V-vl;denominator=V+vs;break;
+ case 7:numerator=V+vl;denominator=V+vs;break;
+ default:numerator=V-vl;denominator=V-vs;
+ }
+ const f=fs*numerator/denominator,delta=f-fs;
+ $('formula').textContent='fL = fS × (('+d.num+') / ('+d.den+'))';
+ $('substitution').textContent='fL = '+fs+' × (('+d.num.replaceAll('V',String(V)).replaceAll('L',String(vl)).replaceAll('S',String(vs))+') / ('+d.den.replaceAll('V',String(V)).replaceAll('L',String(vl)).replaceAll('S',String(vs))+'))';
+ // Explicit numeric substitution avoids ambiguous symbol replacement.
+ const numText=({1:V+' + '+vl,2:V+' − '+vl,3:String(V),4:String(V),5:V+' + '+vl,6:V+' − '+vl,7:V+' + '+vl,8:V+' − '+vl})[n];
+ const denText=({1:String(V),2:String(V),3:V+' − '+vs,4:V+' + '+vs,5:V+' − '+vs,6:V+' + '+vs,7:V+' + '+vs,8:V+' − '+vs})[n];
+ $('substitution').textContent='fL = '+fs+' × (('+numText+') / ('+denText+'))';
+ $('calculation').textContent='fL = '+fs+' × ('+numerator.toFixed(2)+' / '+denominator.toFixed(2)+') = '+f.toFixed(2)+' Hz';
+ $('answer').textContent=f.toFixed(2)+' Hz';
+ $('change').textContent=(delta>0?'+':'')+delta.toFixed(2)+' Hz';
+ $('effect').textContent=d.desc+' '+(delta>0.01?'Higher pitch than the source.':delta< -0.01?'Lower pitch than the source.':'Same frequency as the source.');
+ $('pitchFill').style.width=Math.max(5,Math.min(100,f/1000*100))+'%';
+ if(n!==prevCase){resetScene();prevCase=n;}
+}
+['case','fs','v','vl','vs'].forEach(id=>$(id).addEventListener('input',update));
+$('toggle').addEventListener('click',()=>{running=!running;$('toggle').textContent=running?'Pause animation':'Resume animation';});
+$('reset').addEventListener('click',resetScene);
+function draw(t){
+ const dt=Math.min((t-lastTime)/1000||0,0.04);lastTime=t;
+ const n=+$('case').value,vl=+$('vl').value,vs=+$('vs').value,fs=+$('fs').value,V=+$('v').value,d=caseData[n];
+ const scale=135/V; // px per (m/s) scaled against wave speed
+ if(running){
+  elapsed+=dt;
+  sourceX+=d.sm*vs*scale*dt;
+  listenerX+=d.lm*vl*scale*dt;
+  // Recenter the scene before objects reach the edge.
+  if(sourceX<115||sourceX>685||listenerX<115||listenerX>685)resetScene();
+  if(elapsed-emitTime>=Math.max(.08,25/fs)){
+   waves.push({x:sourceX,y:185,r:0,age:0});emitTime=elapsed;
+  }
+  waves.forEach(w=>{w.r+=135*dt;w.age+=dt;});
+ }
+ const w=canvas.width,h=canvas.height;
+ ctx.clearRect(0,0,w,h);
+ const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,'#0b192b');bg.addColorStop(1,'#07111f');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle='rgba(140,175,215,.10)';ctx.lineWidth=1;
+ for(let x=40;x<w;x+=40){ctx.beginPath();ctx.moveTo(x,48);ctx.lineTo(x,h-30);ctx.stroke();}
+ ctx.beginPath();ctx.moveTo(35,185);ctx.lineTo(w-35,185);ctx.strokeStyle='rgba(140,175,215,.23)';ctx.stroke();
+ waves=waves.filter(a=>a.r<Math.max(w,h)*.8);
+ waves.forEach((wave,i)=>{
+  ctx.beginPath();ctx.arc(wave.x,wave.y,wave.r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(101,216,255,'+Math.max(.08,.60-wave.age*.055)+')';ctx.lineWidth=2;ctx.stroke();
+ });
+ // Motion arrows
+ function arrow(x,y,dir,color,label){
+  if(!dir)return;
+  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+dir*38,y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x+dir*38,y);ctx.lineTo(x+dir*27,y-7);ctx.lineTo(x+dir*27,y+7);ctx.closePath();ctx.fill();
+ }
+ arrow(sourceX,145,d.sm,'#ff6969');arrow(listenerX,145,d.lm,'#68aaff');
+ ctx.fillStyle='#ff6969';ctx.beginPath();ctx.arc(sourceX,185,13,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#ffe0e0';ctx.lineWidth=2;ctx.stroke();
+ ctx.fillStyle='#68aaff';ctx.beginPath();ctx.arc(listenerX,185,13,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle='#d9eaff';ctx.lineWidth=2;ctx.stroke();
+ ctx.font='bold 14px system-ui';ctx.textAlign='center';
+ ctx.fillStyle='#ff9b9b';ctx.fillText('SOURCE',sourceX,218);
+ ctx.fillStyle='#9cc8ff';ctx.fillText('LISTENER',listenerX,218);
+ ctx.textAlign='left';ctx.font='13px system-ui';ctx.fillStyle='#b5c8df';
+ ctx.fillText('Wavefronts expand outward',18,25);
+ ctx.fillText('Scene is a visual model — use the formula for the exact value.',18,canvas.height-13);
+ requestAnimationFrame(draw);
+}
+update();requestAnimationFrame(draw);
+</script>
+</body>
+</html>
